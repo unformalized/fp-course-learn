@@ -38,6 +38,11 @@ class Functor k => Applicative k where
 
 infixl 4 <*>
 
+
+(<$$>) :: Applicative f => (a -> b) -> f a -> f b
+(<$$>) = (<*>) . pure
+
+
 -- | Insert into ExactlyOne.
 --
 -- prop> \x -> pure x == ExactlyOne x
@@ -48,14 +53,12 @@ instance Applicative ExactlyOne where
   pure ::
     a
     -> ExactlyOne a
-  pure =
-    error "todo: Course.Applicative pure#instance ExactlyOne"
+  pure = ExactlyOne
   (<*>) ::
     ExactlyOne (a -> b)
     -> ExactlyOne a
     -> ExactlyOne b
-  (<*>) =
-    error "todo: Course.Applicative (<*>)#instance ExactlyOne"
+  (<*>) = mapExactlyOne . runExactlyOne
 
 -- | Insert into a List.
 --
@@ -67,14 +70,15 @@ instance Applicative List where
   pure ::
     a
     -> List a
-  pure =
-    error "todo: Course.Applicative pure#instance List"
+  pure a = a :. Nil
   (<*>) ::
     List (a -> b)
     -> List a
     -> List b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance List"
+  (<*>) listF listA = flatMap (flip map listA) listF
+-- _todo :: (a -> b) -> List a
+-- listA :: List a
+
 
 -- | Insert into an Optional.
 --
@@ -92,14 +96,14 @@ instance Applicative Optional where
   pure ::
     a
     -> Optional a
-  pure =
-    error "todo: Course.Applicative pure#instance Optional"
+  pure = Full
   (<*>) ::
     Optional (a -> b)
     -> Optional a
     -> Optional b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance Optional"
+  (<*>) oF oA = bindOptional (flip mapOptional oA) oF
+-- bindOptional :: (a -> O b) -> O a -> O b
+-- _todo :: (a -> b) -> O b
 
 -- | Insert into a constant function.
 --

@@ -315,8 +315,7 @@ find f = foldRight (\x finded -> if f x then (Full x) else finded) Empty
 lengthGT4 ::
   List a
   -> Bool
-lengthGT4 =
-  error "todo: Course.List#lengthGT4"
+lengthGT4 = (4 < ). length
 
 -- | Reverse a list.
 --
@@ -332,8 +331,26 @@ lengthGT4 =
 reverse ::
   List a
   -> List a
-reverse =
-  error "todo: Course.List#reverse"
+reverse = foldLeft (flip (:.)) Nil
+
+-- foldLeft ::
+
+
+-- _cons :: List a -> a -> List a
+-- _nil  :: List a
+
+-- reverse = let (+++) = (foldRight (:.)) . (:. Nil)
+--           in foldRight (+++) Nil
+
+-- foldRight
+-- List a = a1 :. a2 :. a3 :. a4 :. Nil
+-- List b = a1 `f` a2 `f` a3 `f` a4 `f` Nil = a4 :. a3 :. a2 :. a1 :. Nil
+-- List b = f a1 (f a2 (f a3 (f a4 Nil)))
+-- _cons :: a -> List a -> List a
+-- _cons a (List a) == List a `+++` a
+-- +++   :: List a -> a -> List a
+-- foldRight (:.) a
+
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
@@ -361,8 +378,9 @@ produce f x = x :. produce f (f x)
 notReverse ::
   List a
   -> List a
-notReverse =
-  error "todo: Is it even possible?"
+notReverse = reverse
+
+-- https://github.com/BestMaster-YS/software-foundations/blob/3e55bcf4b1f2413c49c52fe9e41c1885093d9dfd/Logical_Foundations/Lists.v#L295
 
 ---- End of list exercises
 
