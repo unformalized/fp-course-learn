@@ -127,15 +127,13 @@ instance Applicative ((->) t) where
   pure ::
     a
     -> ((->) t a)
-  pure =
-    error "todo: Course.Applicative pure#((->) t)"
+  pure = const
   (<*>) ::
     ((->) t (a -> b))
     -> ((->) t a)
     -> ((->) t b)
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance ((->) t)"
-
+  (<*>) ftab fta t = ftab t (fta t)
+-- _todo :: (t -> a -> b) -> (t -> a) -> (t -> b)
 
 -- | Apply a binary function in the environment.
 --
@@ -162,8 +160,8 @@ lift2 ::
   -> k a
   -> k b
   -> k c
-lift2 =
-  error "todo: Course.Applicative#lift2"
+lift2 f fa fb =
+  _todo
 
 -- | Apply a ternary function in the environment.
 -- /can be written using `lift2` and `(<*>)`./
