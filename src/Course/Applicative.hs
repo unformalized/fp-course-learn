@@ -154,14 +154,17 @@ instance Applicative ((->) t) where
 --
 -- >>> lift2 (+) length sum (listh [4,5,6])
 -- 18
+-- lift2 目的：将普通函数变成 (pure f) <*> fa = f <$> fa
 lift2 ::
   Applicative k =>
   (a -> b -> c)
   -> k a
   -> k b
   -> k c
-lift2 f fa fb =
-  _todo
+lift2 f ka kb = f <$> ka <*> kb
+-- kbc :: k (b -> c)
+-- f  :: a -> b -> c
+-- ka :: k a
 
 -- | Apply a ternary function in the environment.
 -- /can be written using `lift2` and `(<*>)`./
@@ -193,8 +196,7 @@ lift3 ::
   -> k b
   -> k c
   -> k d
-lift3 =
-  error "todo: Course.Applicative#lift3"
+lift3 f fa fb fc = f <$> fa <*> fb <*> fc
 
 -- | Apply a quaternary function in the environment.
 -- /can be written using `lift3` and `(<*>)`./
@@ -227,16 +229,14 @@ lift4 ::
   -> k c
   -> k d
   -> k e
-lift4 =
-  error "todo: Course.Applicative#lift4"
+lift4 f ka kb kc kd = f <$> ka <*> kb <*> kc <*> kd
 
 -- | Apply a nullary function in the environment.
 lift0 ::
   Applicative k =>
   a
   -> k a
-lift0 =
-  error "todo: Course.Applicative#lift0"
+lift0 = pure
 
 -- | Apply a unary function in the environment.
 -- /can be written using `lift0` and `(<*>)`./
@@ -254,8 +254,7 @@ lift1 ::
   (a -> b)
   -> k a
   -> k b
-lift1 =
-  error "todo: Course.Applicative#lift1"
+lift1 = (<$>)
 
 -- | Apply, discarding the value of the first argument.
 -- Pronounced, right apply.
@@ -280,8 +279,7 @@ lift1 =
   k a
   -> k b
   -> k b
-(*>) =
-  error "todo: Course.Applicative#(*>)"
+(*>) = lift2 (flip const)
 
 -- | Apply, discarding the value of the second argument.
 -- Pronounced, left apply.
@@ -306,8 +304,7 @@ lift1 =
   k b
   -> k a
   -> k b
-(<*) =
-  error "todo: Course.Applicative#(<*)"
+(<*) = lift2 const
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -316,7 +313,10 @@ lift1 =
 --
 -- >>> sequence ((1 :. 2 :. 3 :. Nil) :. (1 :. 2 :. Nil) :. Nil)
 -- [[1,1],[1,2],[2,1],[2,2],[3,1],[3,2]]
---
+-- (1 :. 2 :. 3 :. Nil) `(left (:.))` (1 :. 2 :. Nil) `(lift2 (:.))` (pure Nil)
+-- lift2 (:.) (1 :. 2 :. Nil) Nil => ((1 :. Nil) :. (2 :. Nil) :. Nil)
+-- lift2 (:.) (1 :. 2 :. 3 :. Nil) ((1 :. Nil) :. (2 :. Nil) :. Nil) => [[1,1], [1, 2], [2,1], [2,2]，[3,1], [3,2]]
+
 -- >>> sequence (Full 7 :. Empty :. Nil)
 -- Empty
 --
@@ -330,7 +330,13 @@ sequence ::
   List (k a)
   -> k (List a)
 sequence =
-  error "todo: Course.Applicative#sequence"
+  foldRight (lift2 (:.)) (pure Nil)
+
+-- (:.) :: a -> List a -> List a
+-- _cons = lift2 (:.) :: k a -> k (List b) -> k (List c)
+-- (:.) = (a -> List b) -> List c
+--
+-- (k a)1 `_cons` (k a)2 `_cons` (pure Nil)
 
 -- | Replicate an effect a given number of times.
 --
@@ -350,13 +356,15 @@ sequence =
 --
 -- >>> replicateA 3 ('a' :. 'b' :. 'c' :. Nil)
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
+-- sequence ['abc', 'abc', 'abc']
+
 replicateA ::
   Applicative k =>
   Int
   -> k a
   -> k (List a)
-replicateA =
-  error "todo: Course.Applicative#replicateA"
+replicateA n ka =
+  sequence (replicate n ka)
 
 -- | Filter a list with a predicate that produces an effect.
 --
@@ -383,8 +391,15 @@ filtering ::
   (a -> k Bool)
   -> List a
   -> k (List a)
-filtering =
-  error "todo: Course.Applicative#filtering"
+filtering p =
+  foldRight (\a kxa -> lift2 (f a) (p a) kxa) (pure Nil)
+  where
+    f a b xs = if b then (:.) a xs else xs
+
+-- foldRight _todo (pure Nil) xa
+-- _todo :: a -> k (List a) -> k (List a)
+-- foldRight (\a kxa -> lift2 _todo (p a) kxa) (pure Nil) xa
+-- _todo :: Bool -> List a -> List a
 
 -----------------------
 -- SUPPORT LIBRARIES --
