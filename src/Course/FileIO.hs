@@ -85,8 +85,10 @@ printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile file contents =
-  ((pure ("============ " ++ file)) >>= putStrLn) >>= \_ -> (pure contents) >>= putStrLn
+printFile file content = do
+  putStrLn ("============ " ++ file)
+  putStrLn content
+  -- ((pure ("============ " ++ file)) >>= putStrLn) >>= \_ -> (pure contents) >>= putStrLn
 
 -- Given a list of (file name and file contents), print each.
 -- Use @printFile@.
@@ -94,7 +96,10 @@ printFiles ::
   List (FilePath, Chars)
   -> IO ()
 printFiles files =
-  foldRight (\(file, contents) -> (flip (>>=)) (\_ ->  printFile file contents)) (pure ()) files
+  void (sequence ((\(filepath, content) -> printFile filepath content) <$> files))
+  -- sequence :: List (f a) -> f (List a)
+  -- void :: f a -> f ()
+  -- foldRight (\(file, contents) -> (flip (>>=)) (\_ ->  printFile file contents)) (pure ()) files
 
 -- Given a file name, return (file name and file contents).
 -- Use @readFile@.
@@ -102,15 +107,15 @@ getFile ::
   FilePath
   -> IO (FilePath, Chars)
 getFile filepath =
-  readFile filepath >>= \content -> pure (filepath, content)
+  (\content -> (filepath, content)) <$> (readFile filepath)
 
 -- Given a list of file names, return list of (file name and file contents).
 -- Use @getFile@.
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
-getFiles =
-  sequence . (map getFile)
+getFiles files =
+  sequence (getFile <$> files)
 
 -- Given a file name, read it and for each line in that file, read and print contents of each.
 -- Use @getFiles@, @lines@, and @printFiles@.
