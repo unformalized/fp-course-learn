@@ -96,8 +96,9 @@ optional ::
   -> b
   -> Optional a
   -> b
-optional f b (Full x) = f x
-optional f b _  = b
+optional f b oa = (mapOptional f oa) ?? b
+-- optional f b (Full x) = f x
+-- optional f b _  = b
 
 -- Applicative
 -- bind :: (a -> O b) -> O a -> O b

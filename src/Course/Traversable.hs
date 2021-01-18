@@ -23,6 +23,7 @@ import Course.Compose
 --
 -- * The law of composition
 --   `∀f g. traverse ((g <$>) . f) ≅ (traverse g <$>) . traverse f`
+-- deconstruct and reconstruct
 class Functor t => Traversable t where
   traverse ::
     Applicative k =>
@@ -45,8 +46,8 @@ instance Traversable ExactlyOne where
     (a -> k b)
     -> ExactlyOne a
     -> k (ExactlyOne b)
-  traverse =
-    error "todo: Course.Traversable traverse#instance ExactlyOne"
+  traverse f ea =
+    ExactlyOne <$> f (runExactlyOne ea)
 
 instance Traversable Optional where
   traverse ::
@@ -54,8 +55,8 @@ instance Traversable Optional where
     (a -> k b)
     -> Optional a
     -> k (Optional b)
-  traverse =
-    error "todo: Course.Traversable traverse#instance Optional"
+  traverse f oa =
+    optional (\a -> Full <$> (f a)) (pure Empty) oa
 
 -- | Sequences a traversable value of structures to a structure of a traversable value.
 --
