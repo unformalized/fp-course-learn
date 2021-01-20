@@ -75,7 +75,7 @@ instance Applicative List where
     List (a -> b)
     -> List a
     -> List b
-  (<*>) listF listA = flatMap (flip map listA) listF
+  (<*>) listF listA = flatMap (`map` listA) listF
 -- _todo :: (a -> b) -> List a
 -- listA :: List a
 
