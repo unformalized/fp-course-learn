@@ -83,7 +83,7 @@ instance (Traversable f, Traversable g) =>
   traverse :: Applicative k => (a -> k b) -> Compose f g a -> k (Compose f g b)
   traverse f (Compose fga) =
     Compose <$> traverse (traverse f) fga
-    
+
 
 -- | The `Product` data type contains one value from each of the two type constructors.
 data Product f g a =
@@ -111,11 +111,17 @@ data Coproduct f g a =
 instance (Functor f, Functor g) =>
   Functor (Coproduct f g) where
 -- Implement the (<$>) function for a Functor instance for Coproduct
-  (<$>) =
-    error "todo: Course.Traversable (<$>)#instance (Coproduct f g)"
+  (<$>) :: (a -> b) -> Coproduct f g a -> Coproduct f g b
+  (<$>) f (InL fa) =
+    InL (f <$> fa)
+  (<$>) f (InR ga) =
+    InR (f <$> ga)
 
 instance (Traversable f, Traversable g) =>
   Traversable (Coproduct f g) where
 -- Implement the traverse function for a Traversable instance for Coproduct
-  traverse =
-    error "todo: Course.Traversable traverse#instance (Coproduct f g)"
+  traverse :: Applicative k => (a -> k b) -> Coproduct f g a -> k (Coproduct f g b)
+  traverse f (InL fa) =
+    InL <$> traverse f fa
+  traverse f (InR ga) =
+    InR <$> traverse f ga

@@ -96,7 +96,7 @@ optional ::
   -> b
   -> Optional a
   -> b
-optional f b oa = (mapOptional f oa) ?? b
+optional f b oa = mapOptional f oa ?? b
 -- optional f b (Full x) = f x
 -- optional f b _  = b
 
@@ -105,7 +105,7 @@ optional f b oa = (mapOptional f oa) ?? b
 -- map :: (a -> b) -> O a -> O b
 -- apply :: O (a -> b) -> O a -> O b
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
-applyOptional f a = bindOptional (\f' -> mapOptional f' a) f
+applyOptional f a = bindOptional (`mapOptional` a) f
 
 twiceOptional :: (a -> b -> c) -> Optional a -> Optional b -> Optional c
 twiceOptional f = applyOptional . mapOptional f
