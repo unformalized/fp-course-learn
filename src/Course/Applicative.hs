@@ -1,7 +1,7 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Course.Applicative where
 
@@ -10,7 +10,7 @@ import Course.ExactlyOne
 import Course.Functor
 import Course.List
 import Course.Optional
-import qualified Prelude as P(fmap, return, (>>=))
+import qualified Prelude as P (fmap, return, (>>=))
 
 -- | All instances of the `Applicative` type-class must satisfy four laws.
 -- These laws are not checked by the compiler. These laws are given as:
@@ -26,22 +26,20 @@ import qualified Prelude as P(fmap, return, (>>=))
 --
 -- * The law of interchange
 --   `∀u y. u <*> pure y = pure ($ y) <*> u`
-
 class Functor k => Applicative k where
   pure ::
     a -> k a
+
   -- Pronounced, apply.
   (<*>) ::
-    k (a -> b)
-    -> k a
-    -> k b
+    k (a -> b) ->
+    k a ->
+    k b
 
 infixl 4 <*>
 
-
 (<$$>) :: Applicative f => (a -> b) -> f a -> f b
 (<$$>) = (<*>) . pure
-
 
 -- | Insert into ExactlyOne.
 --
@@ -51,13 +49,13 @@ infixl 4 <*>
 -- ExactlyOne 18
 instance Applicative ExactlyOne where
   pure ::
-    a
-    -> ExactlyOne a
+    a ->
+    ExactlyOne a
   pure = ExactlyOne
   (<*>) ::
-    ExactlyOne (a -> b)
-    -> ExactlyOne a
-    -> ExactlyOne b
+    ExactlyOne (a -> b) ->
+    ExactlyOne a ->
+    ExactlyOne b
   (<*>) = mapExactlyOne . runExactlyOne
 
 -- | Insert into a List.
@@ -68,17 +66,17 @@ instance Applicative ExactlyOne where
 -- [2,3,4,2,4,6]
 instance Applicative List where
   pure ::
-    a
-    -> List a
+    a ->
+    List a
   pure a = a :. Nil
   (<*>) ::
-    List (a -> b)
-    -> List a
-    -> List b
+    List (a -> b) ->
+    List a ->
+    List b
   (<*>) listF listA = flatMap (`map` listA) listF
+
 -- _todo :: (a -> b) -> List a
 -- listA :: List a
-
 
 -- | Insert into an Optional.
 --
@@ -94,14 +92,15 @@ instance Applicative List where
 -- Empty
 instance Applicative Optional where
   pure ::
-    a
-    -> Optional a
+    a ->
+    Optional a
   pure = Full
   (<*>) ::
-    Optional (a -> b)
-    -> Optional a
-    -> Optional b
-  (<*>) oF oA = bindOptional (flip mapOptional oA) oF
+    Optional (a -> b) ->
+    Optional a ->
+    Optional b
+  (<*>) oF oA = bindOptional (`mapOptional` oA) oF
+
 -- bindOptional :: (a -> O b) -> O a -> O b
 -- _todo :: (a -> b) -> O b
 
@@ -125,14 +124,15 @@ instance Applicative Optional where
 -- prop> \x y -> pure x y == x
 instance Applicative ((->) t) where
   pure ::
-    a
-    -> ((->) t a)
+    a ->
+    (->) t a
   pure = const
   (<*>) ::
-    ((->) t (a -> b))
-    -> ((->) t a)
-    -> ((->) t b)
+    (->) t (a -> b) ->
+    (->) t a ->
+    (->) t b
   (<*>) ftab fta t = ftab t (fta t)
+
 -- _todo :: (t -> a -> b) -> (t -> a) -> (t -> b)
 
 -- | Apply a binary function in the environment.
@@ -157,11 +157,12 @@ instance Applicative ((->) t) where
 -- lift2 目的：将普通函数变成 (pure f) <*> fa = f <$> fa
 lift2 ::
   Applicative k =>
-  (a -> b -> c)
-  -> k a
-  -> k b
-  -> k c
+  (a -> b -> c) ->
+  k a ->
+  k b ->
+  k c
 lift2 f ka kb = f <$> ka <*> kb
+
 -- kbc :: k (b -> c)
 -- f  :: a -> b -> c
 -- ka :: k a
@@ -191,11 +192,11 @@ lift2 f ka kb = f <$> ka <*> kb
 -- 138
 lift3 ::
   Applicative k =>
-  (a -> b -> c -> d)
-  -> k a
-  -> k b
-  -> k c
-  -> k d
+  (a -> b -> c -> d) ->
+  k a ->
+  k b ->
+  k c ->
+  k d
 lift3 f fa fb fc = f <$> fa <*> fb <*> fc
 
 -- | Apply a quaternary function in the environment.
@@ -223,19 +224,19 @@ lift3 f fa fb fc = f <$> fa <*> fb <*> fc
 -- 148
 lift4 ::
   Applicative k =>
-  (a -> b -> c -> d -> e)
-  -> k a
-  -> k b
-  -> k c
-  -> k d
-  -> k e
+  (a -> b -> c -> d -> e) ->
+  k a ->
+  k b ->
+  k c ->
+  k d ->
+  k e
 lift4 f ka kb kc kd = f <$> ka <*> kb <*> kc <*> kd
 
 -- | Apply a nullary function in the environment.
 lift0 ::
   Applicative k =>
-  a
-  -> k a
+  a ->
+  k a
 lift0 = pure
 
 -- | Apply a unary function in the environment.
@@ -251,9 +252,9 @@ lift0 = pure
 -- [2,3,4]
 lift1 ::
   Applicative k =>
-  (a -> b)
-  -> k a
-  -> k b
+  (a -> b) ->
+  k a ->
+  k b
 lift1 = (<$>)
 
 -- | Apply, discarding the value of the first argument.
@@ -276,9 +277,9 @@ lift1 = (<$>)
 -- prop> \x y -> Full x *> Full y == Full y
 (*>) ::
   Applicative k =>
-  k a
-  -> k b
-  -> k b
+  k a ->
+  k b ->
+  k b
 (*>) = lift2 (flip const)
 
 -- | Apply, discarding the value of the second argument.
@@ -301,9 +302,9 @@ lift1 = (<$>)
 -- prop> \x y -> Full x <* Full y == Full x
 (<*) ::
   Applicative k =>
+  k b ->
+  k a ->
   k b
-  -> k a
-  -> k b
 (<*) = lift2 const
 
 -- | Sequences a list of structures to a structure of list.
@@ -327,8 +328,8 @@ lift1 = (<$>)
 -- [60,8]
 sequence ::
   Applicative k =>
-  List (k a)
-  -> k (List a)
+  List (k a) ->
+  k (List a)
 sequence =
   foldRight (lift2 (:.)) (pure Nil)
 
@@ -357,12 +358,11 @@ sequence =
 -- >>> replicateA 3 ('a' :. 'b' :. 'c' :. Nil)
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
 -- sequence ['abc', 'abc', 'abc']
-
 replicateA ::
   Applicative k =>
-  Int
-  -> k a
-  -> k (List a)
+  Int ->
+  k a ->
+  k (List a)
 replicateA n ka =
   sequence (replicate n ka)
 
@@ -385,12 +385,11 @@ replicateA n ka =
 --
 -- >>> filtering (const $ True :. True :.  Nil) (1 :. 2 :. 3 :. Nil)
 -- [[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3]]
---
 filtering ::
   Applicative k =>
-  (a -> k Bool)
-  -> List a
-  -> k (List a)
+  (a -> k Bool) ->
+  List a ->
+  k (List a)
 filtering p =
   foldRight (\a kxa -> lift2 (f a) (p a) kxa) (pure Nil)
   where
@@ -413,22 +412,22 @@ instance Applicative IO where
 
 return ::
   Applicative k =>
-  a
-  -> k a
+  a ->
+  k a
 return =
   pure
 
 fail ::
   Applicative k =>
-  Chars
-  -> k a
+  Chars ->
+  k a
 fail =
   error . hlist
 
 (>>) ::
   Applicative k =>
-  k a
-  -> k b
-  -> k b
+  k a ->
+  k b ->
+  k b
 (>>) =
   (*>)
