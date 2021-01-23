@@ -123,8 +123,8 @@ character =
   P parseString
 
 parseString :: Input -> ParseResult Char
-parseString input@(h :. _) = Result input h
-parseString _              = UnexpectedString ""
+parseString (h :. tail) = Result tail h
+parseString _           = UnexpectedEof
 
 -- | Parsers can map.
 -- Write a Functor instance for a @Parser@.
@@ -171,7 +171,7 @@ valueParser x =
   Parser a ->
   Parser a
 (|||) (P parse1) (P parse2) =
-  P (\input -> 
+  P (\input ->
       let x1 = parse1 input
       in if isErrorResult x1 then parse2 input else x1)
 
@@ -205,11 +205,7 @@ instance Monad Parser where
     Parser a ->
     Parser b
   (=<<) f (P parseA) =
-    P (\input ->
-        let x = parseA input
-        in onResult x (\_ a ->
-                        let t = f a
-                        in parse t input))
+    P (\input -> onResult (parseA input) (\input' a -> parse (f a) input'))
 
 -- Functor => ParseResult
 -- x      :: ParseResult a
@@ -228,8 +224,8 @@ instance Applicative Parser where
     Parser (a -> b) ->
     Parser a ->
     Parser b
-  (<*>) =
-    error "todo: Course.Parser (<*>)#instance Parser"
+  (<*>) pf (P parseA) =
+    (\f -> P ((<$>) f . parseA)) =<< pf
 
 -- | Return a parser that produces a character but fails if
 --
