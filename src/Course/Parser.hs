@@ -243,8 +243,13 @@ instance Applicative Parser where
 satisfy ::
   (Char -> Bool) ->
   Parser Char
-satisfy =
-  error "todo: Course.Parser#satisfy"
+satisfy p =
+  (\input -> if p input then pure input else unexpectedCharParser input) =<< character
+  -- P (\input -> 
+  --    if isEmpty input
+  --    then parse (unexpectedCharParser ' ') input
+  --    else let h = headOr ' ' input
+  --      in if p h then parse character input else UnexpectedEof)
 
 -- | Return a parser that produces the given character but fails if
 --
@@ -256,7 +261,7 @@ satisfy =
 is ::
   Char -> Parser Char
 is =
-  error "todo: Course.Parser#is"
+  satisfy . (==)
 
 -- | Return a parser that produces a character between '0' and '9' but fails if
 --
@@ -280,7 +285,7 @@ is =
 digit ::
   Parser Char
 digit =
-  error "todo: Course.Parser#digit"
+  satisfy isDigit
 
 --
 
@@ -306,7 +311,7 @@ digit =
 space ::
   Parser Char
 space =
-  error "todo: Course.Parser#space"
+  satisfy isSpace
 
 -- | Return a parser that conses the result of the first parser onto the result of
 -- the second. Pronounced "cons parser".
@@ -323,7 +328,7 @@ space =
   Parser (List a) ->
   Parser (List a)
 (.:.) =
-  error "todo: Course.Parser#(.:.)"
+  lift2 (:.)
 
 infixr 5 .:.
 
