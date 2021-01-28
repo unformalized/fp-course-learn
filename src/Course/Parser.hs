@@ -124,7 +124,7 @@ character =
 
 parseString :: Input -> ParseResult Char
 parseString (h :. tail) = Result tail h
-parseString _           = UnexpectedEof
+parseString _ = UnexpectedEof
 
 -- | Parsers can map.
 -- Write a Functor instance for a @Parser@.
@@ -171,9 +171,11 @@ valueParser x =
   Parser a ->
   Parser a
 (|||) (P parse1) (P parse2) =
-  P (\input ->
-      let x1 = parse1 input
-      in if isErrorResult x1 then parse2 input else x1)
+  P
+    ( \input ->
+        let x1 = parse1 input
+        in if isErrorResult x1 then parse2 input else x1
+    )
 
 infixl 3 |||
 
@@ -211,7 +213,6 @@ instance Monad Parser where
 -- x      :: ParseResult a
 -- _todo2 :: ParseResult b
 
-
 -- | Write an Applicative functor instance for a @Parser@.
 -- /Tip:/ Use @(=<<)@.
 instance Applicative Parser where
@@ -224,8 +225,8 @@ instance Applicative Parser where
     Parser (a -> b) ->
     Parser a ->
     Parser b
-  (<*>) pf (P parseA) =
-    (\f -> P ((<$>) f . parseA)) =<< pf
+  (<*>) pf pa =
+    (<$> pa) =<< pf
 
 -- | Return a parser that produces a character but fails if
 --
@@ -245,11 +246,12 @@ satisfy ::
   Parser Char
 satisfy p =
   (\input -> if p input then pure input else unexpectedCharParser input) =<< character
-  -- P (\input -> 
-  --    if isEmpty input
-  --    then parse (unexpectedCharParser ' ') input
-  --    else let h = headOr ' ' input
-  --      in if p h then parse character input else UnexpectedEof)
+
+-- P (\input ->
+--    if isEmpty input
+--    then parse (unexpectedCharParser ' ') input
+--    else let h = headOr ' ' input
+--      in if p h then parse character input else UnexpectedEof)
 
 -- | Return a parser that produces the given character but fails if
 --
@@ -356,8 +358,14 @@ infixr 5 .:.
 list ::
   Parser a ->
   Parser (List a)
-list =
-  error "todo: Course.Parser#list"
+list (P pa) =
+  P (foldRight
+      (\a (Result inputs res) ->
+        let x                   = pa (a:.Nil)
+            Result _inputs _res = x
+        in if isErrorResult x then Result (a:.inputs) res else Result inputs (_res:.res))
+      (Result Nil Nil))
+  -- list1 pa ||| pure Nil
 
 -- | Return a parser that produces at least one value from the given parser then
 -- continues producing a list of values from the given parser (to ultimately produce a non-empty list).
@@ -375,8 +383,8 @@ list =
 list1 ::
   Parser a ->
   Parser (List a)
-list1 =
-  error "todo: Course.Parser#list1"
+list1 pa =
+  lift2 (:.) pa (list pa)
 
 -- | Return a parser that produces one or more space characters
 -- (consuming until the first non-space) but fails if
@@ -389,7 +397,7 @@ list1 =
 spaces1 ::
   Parser Chars
 spaces1 =
-  error "todo: Course.Parser#spaces1"
+  list1 space
 
 -- | Return a parser that produces a lower-case character but fails if
 --
@@ -401,7 +409,7 @@ spaces1 =
 lower ::
   Parser Char
 lower =
-  error "todo: Course.Parser#lower"
+  satisfy isLower
 
 -- | Return a parser that produces an upper-case character but fails if
 --
@@ -413,7 +421,7 @@ lower =
 upper ::
   Parser Char
 upper =
-  error "todo: Course.Parser#upper"
+  satisfy isUpper
 
 -- | Return a parser that produces an alpha character but fails if
 --
@@ -425,7 +433,7 @@ upper =
 alpha ::
   Parser Char
 alpha =
-  error "todo: Course.Parser#alpha"
+  satisfy isAlpha
 
 -- | Return a parser that sequences the given list of parsers by producing all their results
 -- but fails on the first failing parser of the list.
