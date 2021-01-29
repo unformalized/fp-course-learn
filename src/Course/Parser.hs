@@ -14,6 +14,7 @@ import Course.Monad
 import Course.Optional
 import Course.Person
 import Data.Char
+import Course.Traversable
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -450,7 +451,8 @@ sequenceParser ::
   List (Parser a) ->
   Parser (List a)
 sequenceParser =
-  error "todo: Course.Parser#sequenceParser"
+  sequenceA
+  -- foldRight (.:.) (pure Nil)
 
 -- | Return a parser that produces the given number of values off the given parser.
 -- This parser fails if the given parser fails in the attempt to produce the given number of values.
@@ -466,8 +468,8 @@ thisMany ::
   Int ->
   Parser a ->
   Parser (List a)
-thisMany =
-  error "todo: Course.Parser#thisMany"
+thisMany n =
+  sequenceParser . replicate n
 
 -- | This one is done for you.
 --
@@ -488,7 +490,7 @@ ageParser =
       Empty -> constantParser (UnexpectedString k)
       Full h -> pure h
   )
-    =<< (list1 digit)
+    =<< list1 digit
 
 -- | Write a parser for Person.firstName.
 -- /First Name: non-empty string that starts with a capital letter and is followed by zero or more lower-case letters/
@@ -503,7 +505,7 @@ ageParser =
 firstNameParser ::
   Parser Chars
 firstNameParser =
-  error "todo: Course.Parser#firstNameParser"
+  upper .:. list lower
 
 -- | Write a parser for Person.surname.
 --
@@ -525,7 +527,10 @@ firstNameParser =
 surnameParser ::
   Parser Chars
 surnameParser =
-  error "todo: Course.Parser#surnameParser"
+  lift3 (\a b c -> a :. b ++ c) upper (thisMany 5 lower) (list lower)
+  -- upper .:. P (\inputs ->
+  --               let len = length inputs
+  --              in if len <= 5 then parse (thisMany 5 lower) inputs else parse (list lower) inputs)
 
 -- | Write a parser for Person.smoker.
 --
@@ -544,7 +549,7 @@ surnameParser =
 smokerParser ::
   Parser Bool
 smokerParser =
-  error "todo: Course.Parser#smokerParser"
+  (const (valueParser True) =<< is 'y') ||| (const (valueParser False) =<< is 'n')
 
 -- | Write part of a parser for Person#phoneBody.
 -- This parser will only produce a string of digits, dots or hyphens.
