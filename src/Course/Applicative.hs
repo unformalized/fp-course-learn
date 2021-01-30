@@ -232,6 +232,18 @@ lift4 ::
   k e
 lift4 f ka kb kc kd = f <$> ka <*> kb <*> kc <*> kd
 
+lift5 ::
+  Applicative k =>
+  (a -> b -> c -> d -> e -> g) ->
+  k a ->
+  k b ->
+  k c ->
+  k d ->
+  k e -> 
+  k g
+lift5 f ka kb kc kd ke = f <$> ka <*> kb <*> kc <*> kd <*> ke
+
+
 -- | Apply a nullary function in the environment.
 lift0 ::
   Applicative k =>

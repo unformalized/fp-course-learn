@@ -125,60 +125,7 @@ character =
 
 parseString :: Input -> ParseResult Char
 parseString (h :. tail) = Result tail h
-parseString _ = UnexpectedEof
-
--- | Parsers can map.
--- Write a Functor instance for a @Parser@.
---
--- >>> parse (toUpper <$> character) "amz"
--- Result >mz< 'A'
-instance Functor Parser where
-  (<$>) ::
-    (a -> b) ->
-    Parser a ->
-    Parser b
-  (<$>) f (P parseA) =
-    P ((f <$>) . parseA)
-
--- | Return a parser that always succeeds with the given value and consumes no input.
---
--- >>> parse (valueParser 3) "abc"
--- Result >abc< 3
-valueParser ::
-  a ->
-  Parser a
-valueParser x =
-  P (`Result` x)
-
--- | Return a parser that tries the first parser for a successful value.
---
---   * If the first parser succeeds then use this parser.
---
---   * If the first parser fails, try the second parser.
---
--- >>> parse (character ||| valueParser 'v') ""
--- Result >< 'v'
---
--- >>> parse (constantParser UnexpectedEof ||| valueParser 'v') ""
--- Result >< 'v'
---
--- >>> parse (character ||| valueParser 'v') "abc"
--- Result >bc< 'a'
---
--- >>> parse (constantParser UnexpectedEof ||| valueParser 'v') "abc"
--- Result >abc< 'v'
-(|||) ::
-  Parser a ->
-  Parser a ->
-  Parser a
-(|||) (P parse1) (P parse2) =
-  P
-    ( \input ->
-        let x1 = parse1 input
-        in if isErrorResult x1 then parse2 input else x1
-    )
-
-infixl 3 |||
+parseString _           = UnexpectedEof
 
 -- | Parsers can bind.
 -- Return a parser that puts its input into the given parser and
@@ -207,12 +154,66 @@ instance Monad Parser where
     (a -> Parser b) ->
     Parser a ->
     Parser b
-  (=<<) f (P parseA) =
-    P (\input -> onResult (parseA input) (\input' a -> parse (f a) input'))
+  (=<<) f (P pA) =
+    P (\input -> onResult (pA input) (\input' a -> parse (f a) input'))
 
--- Functor => ParseResult
--- x      :: ParseResult a
--- _todo2 :: ParseResult b
+(>>>) ::
+  Parser a
+  -> Parser b
+  -> Parser b
+(>>>) pa pb =
+  const pb =<< pa
+
+-- | Return a parser that always succeeds with the given value and consumes no input.
+--
+-- >>> parse (valueParser 3) "abc"
+-- Result >abc< 3
+valueParser ::
+  a ->
+  Parser a
+valueParser x =
+  P (`Result` x)
+
+-- | Parsers can map.
+-- Write a Functor instance for a @Parser@.
+--
+-- >>> parse (toUpper <$> character) "amz"
+-- Result >mz< 'A'
+instance Functor Parser where
+  (<$>) ::
+    (a -> b) ->
+    Parser a ->
+    Parser b
+  (<$>) f pa =
+    valueParser . f =<< pa
+
+-- | Return a parser that tries the first parser for a successful value.
+--
+--   * If the first parser succeeds then use this parser.
+--
+--   * If the first parser fails, try the second parser.
+--
+-- >>> parse (character ||| valueParser 'v') ""
+-- Result >< 'v'
+--
+-- >>> parse (constantParser UnexpectedEof ||| valueParser 'v') ""
+-- Result >< 'v'
+--
+-- >>> parse (character ||| valueParser 'v') "abc"
+-- Result >bc< 'a'
+--
+-- >>> parse (constantParser UnexpectedEof ||| valueParser 'v') "abc"
+-- Result >abc< 'v'
+(|||) ::
+  Parser a ->
+  Parser a ->
+  Parser a
+(|||) (P parse1) (P parse2) =
+  P (\input ->
+      let x = parse1 input
+      in if isErrorResult x then parse2 input else x)
+
+infixl 3 |||
 
 -- | Write an Applicative functor instance for a @Parser@.
 -- /Tip:/ Use @(=<<)@.
@@ -359,18 +360,13 @@ infixr 5 .:.
 list ::
   Parser a ->
   Parser (List a)
-list (P pa) =
-  P (foldRight
-      (\a (Result inputs res) ->
-        let x                   = pa (a:.Nil)
-            Result _inputs _res = x
-        in if isErrorResult x then Result (a:.inputs) res else Result inputs (_res:.res))
-      (Result Nil Nil))
-  -- list1 pa ||| pure Nil
+list pa =
+  list1 pa ||| pure Nil
 
 -- | Return a parser that produces at least one value from the given parser then
 -- continues producing a list of values from the given parser (to ultimately produce a non-empty list).
---
+-- list1 先判断 head 若成功则 list pa 则是再继续遍历剩余的 head
+-- 若是第一次失败则是直接错误，若是后续错误则因为 list 的 ||| 返回 pure Nil 则不会返回 Error
 -- /Tip:/ Use @(=<<)@, @list@ and @pure@.
 --
 -- >>> parse (list1 (character)) "abc"
@@ -505,7 +501,7 @@ ageParser =
 firstNameParser ::
   Parser Chars
 firstNameParser =
-  upper .:. list lower
+  lift2 (:.) upper (list lower)
 
 -- | Write a parser for Person.surname.
 --
@@ -527,7 +523,7 @@ firstNameParser =
 surnameParser ::
   Parser Chars
 surnameParser =
-  lift3 (\a b c -> a :. b ++ c) upper (thisMany 5 lower) (list lower)
+  lift3 (\a b c -> (a :. b) ++ c) upper (thisMany 5 lower) (list lower)
   -- upper .:. P (\inputs ->
   --               let len = length inputs
   --              in if len <= 5 then parse (thisMany 5 lower) inputs else parse (list lower) inputs)
@@ -571,7 +567,7 @@ smokerParser =
 phoneBodyParser ::
   Parser Chars
 phoneBodyParser =
-  error "todo: Course.Parser#phoneBodyParser"
+  list (digit ||| is '.' ||| is '-')
 
 -- | Write a parser for Person.phone.
 --
@@ -593,7 +589,7 @@ phoneBodyParser =
 phoneParser ::
   Parser Chars
 phoneParser =
-  error "todo: Course.Parser#phoneParser"
+  lift3 (\a b _ -> a :. b) digit phoneBodyParser (is '#')
 
 -- | Write a parser for Person.
 --
@@ -651,7 +647,13 @@ phoneParser =
 personParser ::
   Parser Person
 personParser =
-  error "todo: Course.Parser#personParser"
+  lift5
+    Person
+    ageParser
+    (spaces1 *> firstNameParser)
+    (spaces1 *> surnameParser)
+    (spaces1 *> smokerParser)
+    (spaces1 *> phoneParser)
 
 -- Make sure all the tests pass!
 
