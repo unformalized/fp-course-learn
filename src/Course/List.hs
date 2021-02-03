@@ -288,7 +288,7 @@ find ::
   -> Optional a
 -- find _ Nil = Empty
 -- find f (h:t) = if f h then Full h else find f t
-find f = foldRight (\x finded -> if f x then (Full x) else finded) Empty
+find f = foldRight (\x isFind -> if f x then Full x else isFind) Empty
 
 
 -- a1 `f` a2 `f` a3 `f` Empty

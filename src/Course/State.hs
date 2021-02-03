@@ -150,8 +150,13 @@ findM ::
   (a -> f Bool) ->
   List a ->
   f (Optional a)
-findM =
-  error "todo: Course.State#findM"
+findM p =
+  foldRight (\a foa -> lift2 (\oa b -> if b then Full a else oa) foa (p a)) (pure Empty)
+--  因为 foldRight 先从左到右
+--  foldRight (\a foa -> (\case
+--                          Empty -> (\satisfy -> if satisfy then pure (Full a) else pure Empty) =<< p a
+--                          res   -> pure res) =<< foa)
+--            (pure Empty)
 
 -- | Find the first element in a `List` that repeats.
 -- It is possible that no element repeats, hence an `Optional` result.
@@ -164,8 +169,8 @@ firstRepeat ::
   Ord a =>
   List a ->
   Optional a
-firstRepeat =
-  error "todo: Course.State#firstRepeat"
+firstRepeat as =
+  error "_todo2"
 
 -- | Remove all duplicate elements in a `List`.
 -- /Tip:/ Use `filtering` and `State` with a @Data.Set#Set@.
