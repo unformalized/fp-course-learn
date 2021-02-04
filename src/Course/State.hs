@@ -170,7 +170,10 @@ firstRepeat ::
   List a ->
   Optional a
 firstRepeat as =
-  error "_todo2"
+  eval (findM f as) S.empty
+  where
+    f a =
+      State (\s -> (S.member a s, S.insert a s))
 
 -- | Remove all duplicate elements in a `List`.
 -- /Tip:/ Use `filtering` and `State` with a @Data.Set#Set@.
@@ -182,8 +185,15 @@ distinct ::
   Ord a =>
   List a ->
   List a
-distinct =
-  error "todo: Course.State#distinct"
+distinct as =
+  _todo1
+
+setToList ::
+  S.Set a
+  -> List a
+setToList s =
+  P.foldr (:.) Nil (S.elems s)
+
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
 -- In contrast, a sad number (not a happy number) is where the sum of the square of its digits never reaches 1
