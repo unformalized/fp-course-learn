@@ -186,13 +186,11 @@ distinct ::
   List a ->
   List a
 distinct as =
-  _todo1
+  eval (filtering f as) S.empty
+  where
+    f a =
+      State (\s -> (S.notMember a s, S.insert a s))
 
-setToList ::
-  S.Set a
-  -> List a
-setToList s =
-  P.foldr (:.) Nil (S.elems s)
 
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.
@@ -208,13 +206,13 @@ setToList s =
 -- >>> isHappy 4
 -- False
 --
--- >>> isHappy 7
+-- >>> isHappy 7 -> 49 -> 36 + 81 -> 117 -> 1 + 1 + 49 -> 51 -> 26 -> 4 + 36 -> 40 -> 16 -> 37 -> 9 + 49 -> 56 -> 25 + 36 -> 61 -> 37
 -- True
 --
 -- >>> isHappy 42
 -- False
 --
--- >>> isHappy 44
+-- >>> isHappy 44 -> 32 -> 11 -> 2 -> 4 -> 16 
 -- True
 isHappy ::
   Integer ->
