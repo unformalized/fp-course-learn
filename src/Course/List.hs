@@ -752,3 +752,9 @@ instance P.Monad List where
     flip flatMap
   return =
     (:. Nil)
+
+-- 
+geneInfinityList :: a -> (a -> a) -> List a
+geneInfinityList a f =
+  let cur = f a
+  in cur :. geneInfinityList cur f
