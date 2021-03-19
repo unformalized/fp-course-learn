@@ -80,7 +80,7 @@ instance Functor (State s) where
     State s a ->
     State s b
   (<$>) f stateA =
-    State (\s -> 
+    State (\s ->
             let (a, s') = runState stateA s
             in (f a, s'))
 
@@ -151,7 +151,7 @@ findM ::
   List a ->
   f (Optional a)
 findM p =
-  foldRight (\a foa -> lift2 (\oa b -> if b then Full a else oa) foa (p a)) (pure Empty)
+  foldRight (\a foa -> lift2 (\b oa -> if b then Full a else oa) (p a) foa) (pure Empty)
 --  因为 foldRight 先从左到右
 --  foldRight (\a foa -> (\case
 --                          Empty -> (\satisfy -> if satisfy then pure (Full a) else pure Empty) =<< p a

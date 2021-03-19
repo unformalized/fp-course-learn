@@ -100,8 +100,8 @@ type State' s a =
 state' ::
   (s -> (a, s))
   -> State' s a
-state' =
-  error "todo: Course.StateT#state'"
+state' f =
+  StateT (ExactlyOne . f)
 
 -- | Provide an unwrapper for `State'` values.
 --
@@ -111,8 +111,8 @@ runState' ::
   State' s a
   -> s
   -> (a, s)
-runState' =
-  error "todo: Course.StateT#runState'"
+runState' sa s =
+  runExactlyOne (runStateT sa s)
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting state.
 --
@@ -123,8 +123,8 @@ execT ::
   StateT s k a
   -> s
   -> k s
-execT =
-  error "todo: Course.StateT#execT"
+execT sa s =
+  snd <$> runStateT sa s
 
 -- | Run the `State'` seeded with `s` and retrieve the resulting state.
 --
@@ -134,8 +134,8 @@ exec' ::
   State' s a
   -> s
   -> s
-exec' =
-  error "todo: Course.StateT#exec'"
+exec' sa s =
+  snd . runExactlyOne $ runStateT sa s
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting value.
 --
@@ -146,8 +146,8 @@ evalT ::
   StateT s k a
   -> s
   -> k a
-evalT =
-  error "todo: Course.StateT#evalT"
+evalT sa s =
+  fst <$> runStateT sa s
 
 -- | Run the `State'` seeded with `s` and retrieve the resulting value.
 --
@@ -157,8 +157,8 @@ eval' ::
   State' s a
   -> s
   -> a
-eval' =
-  error "todo: Course.StateT#eval'"
+eval' sa s =
+  fst $ runExactlyOne (runStateT sa s)
 
 -- | A `StateT` where the state also distributes into the produced value.
 --
@@ -168,7 +168,7 @@ getT ::
   Applicative k =>
   StateT s k s
 getT =
-  error "todo: Course.StateT#getT"
+  StateT (\s -> pure (s, s))
 
 -- | A `StateT` where the resulting state is seeded with the given value.
 --
@@ -181,8 +181,8 @@ putT ::
   Applicative k =>
   s
   -> StateT s k ()
-putT =
-  error "todo: Course.StateT#putT"
+putT s =
+  StateT (\_ -> pure ((), s))
 
 -- | Remove all duplicate elements in a `List`.
 --
@@ -193,8 +193,15 @@ distinct' ::
   Ord a =>
   List a
   -> List a
-distinct' =
-  error "todo: Course.StateT#distinct'"
+distinct' as =
+  error "WIP"
+--  evalT (filtering stateF as) S.empty
+--  where
+--    stateF a = StateT (\s -> pure (S.notMember s a, S.insert s a))
+
+-- filtering :: Applicative k => (a -> k Bool) -> List a -> k (List a)
+-- 
+
 
 -- | Remove all duplicate elements in a `List`.
 -- However, if you see a value greater than `100` in the list,
