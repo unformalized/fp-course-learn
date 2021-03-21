@@ -194,13 +194,9 @@ distinct' ::
   List a
   -> List a
 distinct' as =
-  error "WIP"
---  evalT (filtering stateF as) S.empty
---  where
---    stateF a = StateT (\s -> pure (S.notMember s a, S.insert s a))
-
--- filtering :: Applicative k => (a -> k Bool) -> List a -> k (List a)
--- 
+  eval' (filtering f as) S.empty
+  where
+    f a = state' (\set -> (S.notMember a set, S.insert a set))
 
 
 -- | Remove all duplicate elements in a `List`.
@@ -218,8 +214,14 @@ distinctF ::
   (Ord a, Num a) =>
   List a
   -> Optional (List a)
-distinctF =
-  error "todo: Course.StateT#distinctF"
+distinctF xs =
+  evalT (filtering f xs) S.empty
+  where
+    f a = StateT (\s ->
+                    if a > 100
+                    then Empty
+                    else Full (S.notMember a s, S.insert a s))
+
 
 -- | An `OptionalT` is a functor of an `Optional` value.
 data OptionalT k a =
@@ -237,8 +239,8 @@ instance Functor k => Functor (OptionalT k) where
     (a -> b)
     -> OptionalT k a
     -> OptionalT k b
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (OptionalT k)"
+  (<$>) f opta =
+    OptionalT ((mapOptional f) <$> runOptionalT opta)
 
 -- | Implement the `Applicative` instance for `OptionalT k` given a Monad k.
 --
@@ -268,15 +270,18 @@ instance Monad k => Applicative (OptionalT k) where
   pure ::
     a
     -> OptionalT k a
-  pure =
-    error "todo: Course.StateT pure#instance (OptionalT k)"
+  pure a =
+    OptionalT (pure (Full a))
 
   (<*>) ::
     OptionalT k (a -> b)
     -> OptionalT k a
     -> OptionalT k b
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (OptionalT k)"
+  (<*>) optf opta =
+    let f = runOptionalT optf
+        a = runOptionalT opta
+    in OptionalT (lift2 (<*>) f a)
+    -- in OptionalT ((\opf -> (\opa -> pure (applyOptional opf opa)) =<< a) =<< f)
 
 -- | Implement the `Monad` instance for `OptionalT k` given a Monad k.
 --
@@ -287,8 +292,11 @@ instance Monad k => Monad (OptionalT k) where
     (a -> OptionalT k b)
     -> OptionalT k a
     -> OptionalT k b
-  (=<<) =
-    error "todo: Course.StateT (=<<)#instance (OptionalT k)"
+  (=<<) f opta =
+    OptionalT (g =<< runOptionalT opta)
+    where
+      g (Full a) = runOptionalT (f a)
+      g Empty    = pure Empty
 
 -- | A `Logger` is a pair of a list of log values (`[l]`) and an arbitrary value (`a`).
 data Logger l a =
