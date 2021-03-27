@@ -384,8 +384,8 @@ distinctG as =
   where
     f a = StateT (\s -> 
             let res = if a > 100 then Empty else Full (S.notMember a s, S.insert a s)
-                log = if even a then "even number: " ++ show' a else Nil
-            in OptionalT (Logger (log :. Nil) res)
+                log = if even a then "even number: " ++ show' a else "aborting > " ++ show' a
+            in OptionalT (log1 log res)
           )
     
 -- 建议先将 f a 单独写成一个函数，再放入 where 中
