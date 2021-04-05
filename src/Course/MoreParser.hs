@@ -14,6 +14,7 @@ import Course.Monad
 import Course.Functor
 import Course.Traversable
 import Numeric hiding (readHex)
+--import Data.List (and)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -353,7 +354,10 @@ sepby pa ps =
 eof ::
   Parser ()
 eof =
-  _todo
+  P (\input -> case input of
+      _:._ -> UnexpectedString input
+      _  -> Result input ()
+    )
 
 -- | Write a parser that produces a character that satisfies all of the given predicates.
 --
@@ -376,8 +380,8 @@ eof =
 satisfyAll ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAll =
-  error "todo: Course.MoreParser#satisfyAll"
+satisfyAll fs =
+  satisfy (and . sequence fs)
 
 -- | Write a parser that produces a character that satisfies any of the given predicates.
 --
@@ -397,8 +401,8 @@ satisfyAll =
 satisfyAny ::
   List (Char -> Bool)
   -> Parser Char
-satisfyAny =
-  error "todo: Course.MoreParser#satisfyAny"
+satisfyAny fs =
+  satisfy (or . sequence fs)
 
 -- | Write a parser that parses between the two given characters, separated by a comma character ','.
 --
@@ -435,5 +439,5 @@ betweenSepbyComma ::
   -> Char
   -> Parser a
   -> Parser (List a)
-betweenSepbyComma =
-  error "todo: Course.MoreParser#betweenSepbyComma"
+betweenSepbyComma begin end pa =
+  betweenCharTok begin end (sepby pa commaTok)
