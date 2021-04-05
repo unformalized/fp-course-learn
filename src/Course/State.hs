@@ -212,7 +212,7 @@ distinct as =
 -- >>> isHappy 42
 -- False
 --
--- >>> isHappy 44 -> 32 -> 11 -> 2 -> 4 -> 16 
+-- >>> isHappy 44 -> 32 -> 11 -> 2 -> 4 -> 16
 -- True
 isHappy ::
   Integer ->
@@ -223,3 +223,5 @@ isHappy =
 square :: Int -> Int
 square =
   join (*)
+
+-- (*) :: x -> y -> z
