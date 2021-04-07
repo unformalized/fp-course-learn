@@ -225,3 +225,11 @@ square =
   join (*)
 
 -- (*) :: x -> y -> z
+-- join :: Monad f => f (f a) -> f a
+-- Monad ((->) t)
+-- join :: (t -> t -> a) -> t -> a
+
+
+
+
+
